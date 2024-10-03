@@ -79,11 +79,7 @@ abstract contract BaseZkSyncUpgrade is ZKChainBase {
         _upgradeVerifier(_proposedUpgrade.verifier, _proposedUpgrade.verifierParams);
         _setBaseSystemContracts(_proposedUpgrade.bootloaderHash, _proposedUpgrade.defaultAccountHash, isPatchOnly);
 
-        txHash = _setL2SystemContractUpgrade(
-            _proposedUpgrade.l2ProtocolUpgradeTx,
-            newMinorVersion,
-            isPatchOnly
-        );
+        txHash = _setL2SystemContractUpgrade(_proposedUpgrade.l2ProtocolUpgradeTx, newMinorVersion, isPatchOnly);
 
         _postUpgrade(_proposedUpgrade.postUpgradeCalldata);
 
