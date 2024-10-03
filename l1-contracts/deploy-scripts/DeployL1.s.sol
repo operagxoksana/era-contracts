@@ -55,6 +55,7 @@ import {IMessageRoot} from "contracts/bridgehub/IMessageRoot.sol";
 import {IAssetRouterBase} from "contracts/bridge/asset-router/IAssetRouterBase.sol";
 import {L2ContractsBytecodesLib} from "./L2ContractsBytecodesLib.sol";
 import {ValidiumL1DAValidator} from "contracts/state-transition/data-availability/ValidiumL1DAValidator.sol";
+import {BytecodesSupplier} from "contracts/upgrades/BytecodesSupplier.sol";
 
 struct FixedForceDeploymentsData {
     uint256 l1ChainId;
@@ -93,6 +94,7 @@ contract DeployL1Script is Script {
         address blobVersionedHashRetriever;
         address validatorTimelock;
         address create2Factory;
+        address bytecodesSupplier;
     }
 
     // solhint-disable-next-line gas-struct-packing
@@ -357,6 +359,13 @@ contract DeployL1Script is Script {
         } else {
             config.contracts.multicall3Addr = MULTICALL3_ADDRESS;
         }
+    }
+
+    function deployBytecodesSupplier() internal {
+        // TODO: include it into the upgrade process.
+        address contractAddress = deployViaCreate2(type(BytecodesSupplier).creationCode);
+        console.log("BytecodesSupplier deployed at:", contractAddress);
+        addresses.bytecodesSupplier = contractAddress;
     }
 
     function deployVerifier() internal {
@@ -1052,6 +1061,7 @@ contract DeployL1Script is Script {
         vm.serializeString("deployed_addresses", "bridgehub", bridgehub);
         vm.serializeString("deployed_addresses", "bridges", bridges);
         vm.serializeString("deployed_addresses", "state_transition", stateTransition);
+        vm.serializeAddress("deployed_addresses", "bytecodes_supplier", addresses.bytecodesSupplier);
 
         vm.serializeAddress(
             "deployed_addresses",
