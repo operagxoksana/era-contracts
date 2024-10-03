@@ -16,7 +16,6 @@ import {SemVer} from "../common/libraries/SemVer.sol";
 
 /// @notice The struct that represents the upgrade proposal.
 /// @param l2ProtocolUpgradeTx The system upgrade transaction.
-/// @param factoryDeps The list of factory deps for the l2ProtocolUpgradeTx.
 /// @param bootloaderHash The hash of the new bootloader bytecode. If zero, it will not be updated.
 /// @param defaultAccountHash The hash of the new default account bytecode. If zero, it will not be updated.
 /// @param verifier The address of the new verifier. If zero, the verifier will not be updated.
@@ -30,7 +29,6 @@ import {SemVer} from "../common/libraries/SemVer.sol";
 /// the previous protocol version.
 struct ProposedUpgrade {
     L2CanonicalTransaction l2ProtocolUpgradeTx;
-    bytes[] factoryDeps;
     bytes32 bootloaderHash;
     bytes32 defaultAccountHash;
     address verifier;
@@ -83,7 +81,6 @@ abstract contract BaseZkSyncUpgrade is ZKChainBase {
 
         txHash = _setL2SystemContractUpgrade(
             _proposedUpgrade.l2ProtocolUpgradeTx,
-            _proposedUpgrade.factoryDeps,
             newMinorVersion,
             isPatchOnly
         );
@@ -193,14 +190,15 @@ abstract contract BaseZkSyncUpgrade is ZKChainBase {
     /// @notice Sets the hash of the L2 system contract upgrade transaction for the next batch to be committed
     /// @dev If the transaction is noop (i.e. its type is 0) it does nothing and returns 0.
     /// @param _l2ProtocolUpgradeTx The L2 system contract upgrade transaction.
-    /// @param _factoryDeps The factory dependencies that are used by the transaction.
     /// @param _newMinorProtocolVersion The new minor protocol version. It must be used as the `nonce` field
     /// of the `_l2ProtocolUpgradeTx`.
     /// @param _patchOnly Whether only the patch part of the protocol version semver has changed.
+    /// @dev IMPORTANT: The `_factoryDeps` are not expected to exactly the set (or even a subset)
+    /// of the preimages for the `_l2ProtocolUpgradeTx.factoryDeps` field. It is the responsibility of the
+    /// decentralized governance to ensure that the preimages are available before the upgrade is proposed.
     /// @return System contracts upgrade transaction hash. Zero if no upgrade transaction is set.
     function _setL2SystemContractUpgrade(
         L2CanonicalTransaction calldata _l2ProtocolUpgradeTx,
-        bytes[] calldata _factoryDeps,
         uint32 _newMinorProtocolVersion,
         bool _patchOnly
     ) internal returns (bytes32) {
@@ -233,7 +231,7 @@ abstract contract BaseZkSyncUpgrade is ZKChainBase {
             revert L2UpgradeNonceNotEqualToNewProtocolVersion(_l2ProtocolUpgradeTx.nonce, _newMinorProtocolVersion);
         }
 
-        _verifyFactoryDeps(_factoryDeps, _l2ProtocolUpgradeTx.factoryDeps);
+        _verifyFactoryDeps(_l2ProtocolUpgradeTx.factoryDeps);
 
         bytes32 l2ProtocolUpgradeTxHash = keccak256(encodedTransaction);
 
@@ -242,23 +240,11 @@ abstract contract BaseZkSyncUpgrade is ZKChainBase {
         return l2ProtocolUpgradeTxHash;
     }
 
-    /// @notice Verifies that the factory deps correspond to the proper hashes
-    /// @param _factoryDeps The list of factory deps
-    /// @param _expectedHashes The list of expected bytecode hashes
-    function _verifyFactoryDeps(bytes[] calldata _factoryDeps, uint256[] calldata _expectedHashes) private pure {
-        if (_factoryDeps.length != _expectedHashes.length) {
-            revert UnexpectedNumberOfFactoryDeps();
-        }
-        if (_factoryDeps.length > MAX_NEW_FACTORY_DEPS) {
+    /// @notice Verifies that the factory deps provided are in the correct format
+    /// @param _hashes The list of hashes of factory deps
+    function _verifyFactoryDeps(uint256[] calldata _hashes) private pure {
+        if (_hashes.length > MAX_NEW_FACTORY_DEPS) {
             revert TooManyFactoryDeps();
-        }
-        uint256 length = _factoryDeps.length;
-
-        for (uint256 i = 0; i < length; ++i) {
-            bytes32 bytecodeHash = L2ContractHelper.hashL2Bytecode(_factoryDeps[i]);
-            if (bytecodeHash != bytes32(_expectedHashes[i])) {
-                revert L2BytecodeHashMismatch(bytecodeHash, bytes32(_expectedHashes[i]));
-            }
         }
     }
 

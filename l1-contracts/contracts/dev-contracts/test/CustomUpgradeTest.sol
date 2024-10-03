@@ -36,7 +36,6 @@ contract CustomUpgradeTest is BaseZkSyncUpgrade {
         bytes32 txHash;
         txHash = _setL2SystemContractUpgrade(
             _proposedUpgrade.l2ProtocolUpgradeTx,
-            _proposedUpgrade.factoryDeps,
             newMinorVersion,
             isPatchOnly
         );

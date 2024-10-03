@@ -436,7 +436,6 @@ contract EcosystemUpgrade is Script {
 
         ProposedUpgrade memory proposedUpgrade = ProposedUpgrade({
             l2ProtocolUpgradeTx: _composeUpgradeTx(),
-            factoryDeps: new bytes[](0),
             bootloaderHash: config.contracts.bootloaderHash,
             defaultAccountHash: config.contracts.defaultAAHash,
             verifier: addresses.stateTransition.verifier,
