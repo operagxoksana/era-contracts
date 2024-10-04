@@ -27,8 +27,8 @@ contract L2GatewayUpgrade {
     /// `ComplexUpgrader` was deployed before.
     constructor(
         address _ctmDeployer,
-        bytes calldata _fixedForceDeploymentsData,
-        bytes calldata _additionalForceDeploymentsData
+        bytes memory _fixedForceDeploymentsData,
+        bytes memory _additionalForceDeploymentsData
     ) {
 
         // Secondly, we perform the more complex deployment of the gateway contracts.
