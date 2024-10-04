@@ -18,15 +18,25 @@ contract BytecodesSupplier {
     mapping(bytes32 bytecodeHash => uint256 blockNumber) public publishingBlock;
 
     /// @notice Publishes the bytecode hash and the bytecode itself.
+    /// @param _bytecode Bytecode to be published.
     function publishBytecode(bytes memory _bytecode) public {
         bytes32 bytecodeHash = L2ContractHelper.hashL2Bytecode(_bytecode);
 
         if (publishingBlock[bytecodeHash] != 0) {
+            // FIXME: use custom error
             revert("Bytecode already published");
         }
 
         publishingBlock[bytecodeHash] = block.number;
 
         emit BytecodePublished(bytecodeHash, _bytecode);
+    }
+
+    /// @notice Publishes multiple bytecodes.
+    /// @param _bytecodes Array of bytecodes to be published.
+    function publishBytecodes(bytes[] memory _bytecodes) public {
+        for (uint256 i = 0; i < _bytecodes.length; i++) {
+            publishBytecode(_bytecodes[i]);
+        }
     }
 }

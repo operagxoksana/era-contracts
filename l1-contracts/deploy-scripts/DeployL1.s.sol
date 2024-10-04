@@ -362,7 +362,6 @@ contract DeployL1Script is Script {
     }
 
     function deployBytecodesSupplier() internal {
-        // TODO: include it into the upgrade process.
         address contractAddress = deployViaCreate2(type(BytecodesSupplier).creationCode);
         console.log("BytecodesSupplier deployed at:", contractAddress);
         addresses.bytecodesSupplier = contractAddress;

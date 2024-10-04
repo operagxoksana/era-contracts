@@ -169,7 +169,6 @@ library Utils {
     function readHardhatBytecode(string memory artifactPath) internal view returns (bytes memory) {
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, artifactPath);
-        console.log(path);
         string memory json = vm.readFile(path);
         bytes memory bytecode = vm.parseJsonBytes(json, ".bytecode");
         return bytecode;
@@ -192,6 +191,34 @@ library Utils {
         bytes memory bytecode = vm.parseJson(file, "$.bytecode");
         return bytecode;
     }
+
+
+    /**
+     * @dev Returns the bytecode of a given system contract.
+     */
+    function readPrecompileBytecode(string memory filename) internal view returns (bytes memory) {
+        // It is the only exceptional case
+        if (keccak256(abi.encodePacked(filename)) == keccak256(abi.encodePacked("EventWriter"))) {
+            return vm.readFileBinary(
+                // solhint-disable-next-line func-named-parameters
+                string.concat(
+                    "../system-contracts/contracts-preprocessed/artifacts/",
+                    filename,
+                    ".yul.zbin"
+                )
+            );
+        }
+
+        return vm.readFileBinary(
+            // solhint-disable-next-line func-named-parameters
+            string.concat(
+                "../system-contracts/contracts-preprocessed/precompiles/artifacts/",
+                filename,
+                ".yul.zbin"
+            )
+        );
+    }
+
 
     /**
      * @dev Deploy a Create2Factory contract.

@@ -63,11 +63,14 @@ import {IZKChain} from "contracts/state-transition/chain-interfaces/IZKChain.sol
 import {ProposedUpgrade} from "contracts/upgrades/BaseZkSyncUpgrade.sol";
 
 import {L2CanonicalTransaction} from "contracts/common/Messaging.sol";
-
-import {L2_FORCE_DEPLOYER_ADDR, L2_COMPLEX_UPGRADER_ADDR} from "contracts/common/L2ContractAddresses.sol";
+import {L2_FORCE_DEPLOYER_ADDR, L2_COMPLEX_UPGRADER_ADDR, L2_DEPLOYER_SYSTEM_CONTRACT_ADDR} from "contracts/common/L2ContractAddresses.sol";
 import {IComplexUpgrader} from "contracts/state-transition/l2-deps/IComplexUpgrader.sol";
 import {GatewayUpgradeEncodedInput} from "contracts/upgrades/GatewayUpgrade.sol";
 import {TransitionaryOwner} from "contracts/governance/TransitionaryOwner.sol";
+import { SystemContractsProcessing } from "./SystemContractsProcessing.s.sol";
+import { BytecodePublisher } from "./BytecodePublisher.s.sol";
+import {BytecodesSupplier} from "contracts/upgrades/BytecodesSupplier.sol";
+
 
 struct FixedForceDeploymentsData {
     uint256 l1ChainId;
@@ -121,6 +124,7 @@ contract EcosystemUpgrade is Script {
         address gatewayUpgrade;
         address create2Factory;
         address transitionaryOwner;
+        address bytecodesSupplier;
     }
 
     struct ExpectedL2Addresses {
@@ -236,6 +240,8 @@ contract EcosystemUpgrade is Script {
 
         instantiateCreate2Factory();
 
+        deployBytecodesSupplier();
+        publishBytecodes();
         deployVerifier();
         deployDefaultUpgrade();
         deployGenesisUpgrade();
@@ -328,7 +334,9 @@ contract EcosystemUpgrade is Script {
             // FIXME: dont use hardcoded values
             txType: 254,
             from: uint256(uint160(L2_FORCE_DEPLOYER_ADDR)),
-            to: uint256(uint160(address(L2_COMPLEX_UPGRADER_ADDR))),
+            // Note, that we actually do force deployments to the ContractDeployer and not complex upgrader.
+            // The implementation of the ComplexUpgrader will be deployed during one of the force deployments.
+            to: uint256(uint160(address(L2_DEPLOYER_SYSTEM_CONTRACT_ADDR))),
             gasLimit: 72_000_000,
             gasPerPubdataByteLimit: 800,
             maxFeePerGas: 0,
@@ -417,14 +425,39 @@ contract EcosystemUpgrade is Script {
             recursionCircuitsSetVksHash: config.contracts.recursionCircuitsSetVksHash
         });
 
-        // TODO: we should fill this one up completely, but it is straightforward
-        IL2ContractDeployer.ForceDeployment[] memory baseForceDeployments = new IL2ContractDeployer.ForceDeployment[](
-            0
+        IL2ContractDeployer.ForceDeployment[] memory baseForceDeployments = SystemContractsProcessing.getBaseForceDeployments();
+
+        // This upgrade has complex upgrade. We do not know whether its implementation has been deployed.
+        // We will do the following trick:
+        // - Deploy the upgrade implementation into the address of the complex upgrader. And execute the upgrade inside the constructor.
+        // - Deploy back the original bytecode.
+        IL2ContractDeployer.ForceDeployment[] memory additionalForceDeployments = new IL2ContractDeployer.ForceDeployment[](2);
+        additionalForceDeployments[0] = IL2ContractDeployer.ForceDeployment({
+            bytecodeHash: L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readGatewayUpgradeBytecode()),
+            newAddress: L2_COMPLEX_UPGRADER_ADDR,
+            callConstructor: true,
+            value: 0,
+            input: ""
+        });
+        // Getting the contract back to normal
+        additionalForceDeployments[1] = IL2ContractDeployer.ForceDeployment({
+            bytecodeHash: L2ContractHelper.hashL2Bytecode(Utils.readSystemContractsBytecode("ComplexUpgrader")),
+            newAddress: L2_COMPLEX_UPGRADER_ADDR,
+            callConstructor: false,
+            value: 0,
+            input: ""
+        });
+
+        IL2ContractDeployer.ForceDeployment[] memory forceDeployments = SystemContractsProcessing.mergeForceDeployments(
+            baseForceDeployments,
+            additionalForceDeployments
         );
+
         address ctmDeployer = addresses.bridgehub.ctmDeploymentTrackerProxy;
 
         GatewayUpgradeEncodedInput memory gateUpgradeInput = GatewayUpgradeEncodedInput({
-            baseForceDeployments: baseForceDeployments,
+            forceDeployments: forceDeployments,
+            l2GatewayUpgradePosition: forceDeployments.length - 2,
             ctmDeployer: ctmDeployer,
             fixedForceDeploymentsData: generatedData.forceDeploymentsData,
             l2GatewayUpgrade: addresses.expectedL2Addresses.expectedL2GatewayUpgrade,
@@ -710,6 +743,41 @@ contract EcosystemUpgrade is Script {
         }
 
         addresses.create2Factory = contractAddress;
+    }
+
+    function deployBytecodesSupplier() internal {
+        address contractAddress = deployViaCreate2(type(BytecodesSupplier).creationCode);
+        console.log("BytecodesSupplier deployed at:", contractAddress);
+        addresses.bytecodesSupplier = contractAddress;
+    }
+
+    function getFullListOfFactoryDependencies() internal returns (bytes[] memory factoryDeps) {
+        bytes[] memory basicDependencies = SystemContractsProcessing.getBaseListOfDependencies();
+
+        // This upgrade will also require to publish:
+        // - L2GatewayUpgrade
+        // - new L2 shared bridge legacy implementation
+        // - new bridged erc20 token implementation
+        // 
+        // Also, not strictly necessary, but better for consistency with the new chains:
+        // - UpgradeableBeacon
+        // - BeaconProxy
+
+
+        bytes[] memory upgradeSpecificDependencies = new bytes[](5);
+        upgradeSpecificDependencies[0] = L2ContractsBytecodesLib.readGatewayUpgradeBytecode();
+        upgradeSpecificDependencies[1] = L2ContractsBytecodesLib.readL2LegacySharedBridgeBytecode();
+        upgradeSpecificDependencies[2] = L2ContractsBytecodesLib.readStandardERC20Bytecode();
+
+        upgradeSpecificDependencies[3] = L2ContractsBytecodesLib.readUpgradeableBeaconBytecode();
+        upgradeSpecificDependencies[4] = L2ContractsBytecodesLib.readBeaconProxyBytecode();
+
+        factoryDeps = SystemContractsProcessing.mergeBytesArrays(basicDependencies, upgradeSpecificDependencies);
+    }
+
+    function publishBytecodes() internal {
+        bytes[] memory allDeps = SystemContractsProcessing.deduplicateBytecodes(getFullListOfFactoryDependencies());
+        BytecodePublisher.publishBytecodesInBatches(BytecodesSupplier(addresses.bytecodesSupplier), allDeps);
     }
 
     function deployVerifier() internal {

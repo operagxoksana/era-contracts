@@ -21,15 +21,15 @@ import {UpgradeableBeacon} from "@openzeppelin/contracts-v4/proxy/beacon/Upgrade
 /// facilitating reusage of the code.
 /// @dev During the upgrade, it will be delegate-called by the `ComplexUpgrader` contract.
 contract L2GatewayUpgrade {
-    function upgrade(
-        ForceDeployment[] calldata _forceDeployments,
+    /// @dev Note that this contract will be deployed inside the `ComplexUpgrader` contracts'
+    /// address and the upgrade logic will reside in the constructor.
+    /// This is needed because we can not be sure that the implementation contract for the
+    /// `ComplexUpgrader` was deployed before.
+    constructor(
         address _ctmDeployer,
         bytes calldata _fixedForceDeploymentsData,
         bytes calldata _additionalForceDeploymentsData
-    ) external payable {
-        // Firstly, we force deploy the main set of contracts.
-        // Those will be deployed without any contract invocation.
-        IContractDeployer(DEPLOYER_SYSTEM_CONTRACT).forceDeployOnAddresses{value: msg.value}(_forceDeployments);
+    ) {
 
         // Secondly, we perform the more complex deployment of the gateway contracts.
         L2GatewayUpgradeHelper.performGatewayContractsInit(
