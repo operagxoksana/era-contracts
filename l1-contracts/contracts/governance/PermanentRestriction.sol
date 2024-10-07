@@ -22,7 +22,7 @@ import {IPermanentRestriction} from "./IPermanentRestriction.sol";
 /// @dev We use try-catch to test whether some of the conditions should be checked.
 /// To avoid attacks based on the 63/64 gas limitations, we ensure that each such call
 /// has at least this amount.
-uint256 constant MIN_GAS_FOR_FALLABLE_CALL = 5_000_000;
+uint256 constant MIN_GAS_FOR_FALLABLE_CALL = 3_000_000;
 
 /// @title PermanentRestriction contract
 /// @author Matter Labs

@@ -197,7 +197,6 @@ contract EcosystemUpgrade is Script {
         bytes32 genesisRoot;
         uint256 genesisRollupLeafIndex;
         bytes32 genesisBatchCommitment;
-        uint256 latestProtocolVersion;
         bytes32 recursionNodeLevelVkHash;
         bytes32 recursionLeafLevelVkHash;
         bytes32 recursionCircuitsSetVksHash;
@@ -281,7 +280,7 @@ contract EcosystemUpgrade is Script {
     }
 
     function run() public {
-        console.log("Deploying L1 contracts");
+        prepareEcosystemContracts("/script-config/gateway-upgrade-ecosystem.toml", "/script-out/gateway-upgrade-ecosystem.toml");
     }
 
     function provideAcceptOwnershipCalls() public returns (Call[] memory calls) {
@@ -488,6 +487,16 @@ contract EcosystemUpgrade is Script {
         });
     }
 
+    function getStage1UpgradeCalls() public returns (Call[] memory calls) {
+        // Stage 1 of the upgrade:
+        // - accept all the ownerships of the contracts
+        // - set the new upgrade data for chains + update validator timelock.
+        calls = mergeCalls(
+            provideAcceptOwnershipCalls(),
+            provideSetNewVersionUpgradeCall()
+        );
+    } 
+
     function getStage2UpgradeCalls() public returns (Call[] memory calls) {
         calls = new Call[](9);
 
@@ -604,7 +613,6 @@ contract EcosystemUpgrade is Script {
         config.contracts.genesisRoot = toml.readBytes32("$.contracts.genesis_root");
         config.contracts.genesisRollupLeafIndex = toml.readUint("$.contracts.genesis_rollup_leaf_index");
         config.contracts.genesisBatchCommitment = toml.readBytes32("$.contracts.genesis_batch_commitment");
-        config.contracts.latestProtocolVersion = toml.readUint("$.contracts.latest_protocol_version");
         config.contracts.recursionNodeLevelVkHash = toml.readBytes32("$.contracts.recursion_node_level_vk_hash");
         config.contracts.recursionLeafLevelVkHash = toml.readBytes32("$.contracts.recursion_leaf_level_vk_hash");
         config.contracts.recursionCircuitsSetVksHash = toml.readBytes32("$.contracts.recursion_circuits_set_vks_hash");
@@ -1372,6 +1380,11 @@ contract EcosystemUpgrade is Script {
         vm.serializeAddress("root", "deployer_addr", config.deployerAddress);
         vm.serializeString("root", "deployed_addresses", deployedAddresses);
         vm.serializeString("root", "contracts_config", contractsConfig);
+
+        vm.serializeBytes("root", "governance_stage1_calls", abi.encode(getStage1UpgradeCalls()));
+        vm.serializeBytes("root", "governance_stage2_calls", abi.encode(getStage2UpgradeCalls()));
+        vm.serializeBytes("root", "chain_upgrade_diamond_cut", abi.encode(getChainUpgradeInfo()));
+
         string memory toml = vm.serializeAddress("root", "owner_address", config.ownerAddress);
 
         vm.writeToml(toml, outputPath);
@@ -1409,6 +1422,17 @@ contract EcosystemUpgrade is Script {
 
         return abi.encode(data);
     }
+
+    function mergeCalls(Call[] memory a, Call[] memory b) internal pure returns (Call[] memory result) {
+        result = new Call[](a.length + b.length);
+        for (uint256 i = 0; i < a.length; i++) {
+            result[i] = a[i];
+        }
+        for (uint256 i = 0; i < b.length; i++) {
+            result[a.length + i] = b[i];
+        }
+    }
+
 
     // add this to be excluded from coverage report
     function test() internal {}
