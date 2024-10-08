@@ -1038,10 +1038,11 @@ contract EcosystemUpgrade is Script {
     }
 
     function setL1LegacyBridge() internal {
-        vm.broadcast(msg.sender);
+        vm.startBroadcast();
         L1AssetRouter(addresses.bridges.sharedBridgeProxy).setL1Erc20Bridge(
             L1ERC20Bridge(config.contracts.legacyErc20BridgeAddress)
         );
+        vm.stopBroadcast();
     }
 
     function deployErc20BridgeImplementation() internal {

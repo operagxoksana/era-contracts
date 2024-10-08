@@ -19,7 +19,7 @@ library BytecodePublisher {
 
     /// @notice Publishes bytecodes in batches, each not exceeding 100KB
     /// @param bytecodes The array of bytecodes to publish
-    function publishBytecodesInBatches(BytecodesSupplier bytecodesSupplier, bytes[] memory bytecodes) external {
+    function publishBytecodesInBatches(BytecodesSupplier bytecodesSupplier, bytes[] memory bytecodes) internal {
         uint256 totalBytecodes = bytecodes.length;
         require(totalBytecodes > 0, "No bytecodes to publish");
 
