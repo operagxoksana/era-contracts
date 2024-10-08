@@ -212,33 +212,29 @@ library Utils {
         return bytecode;
     }
 
-
     /**
      * @dev Returns the bytecode of a given system contract.
      */
     function readPrecompileBytecode(string memory filename) internal view returns (bytes memory) {
         // It is the only exceptional case
         if (keccak256(abi.encodePacked(filename)) == keccak256(abi.encodePacked("EventWriter"))) {
-            return vm.readFileBinary(
+            return
+                vm.readFileBinary(
+                    // solhint-disable-next-line func-named-parameters
+                    string.concat("../system-contracts/contracts-preprocessed/artifacts/", filename, ".yul.zbin")
+                );
+        }
+
+        return
+            vm.readFileBinary(
                 // solhint-disable-next-line func-named-parameters
                 string.concat(
-                    "../system-contracts/contracts-preprocessed/artifacts/",
+                    "../system-contracts/contracts-preprocessed/precompiles/artifacts/",
                     filename,
                     ".yul.zbin"
                 )
             );
-        }
-
-        return vm.readFileBinary(
-            // solhint-disable-next-line func-named-parameters
-            string.concat(
-                "../system-contracts/contracts-preprocessed/precompiles/artifacts/",
-                filename,
-                ".yul.zbin"
-            )
-        );
     }
-
 
     /**
      * @dev Deploy a Create2Factory contract.

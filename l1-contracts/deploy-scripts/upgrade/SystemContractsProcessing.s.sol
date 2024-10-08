@@ -1,22 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import {  Utils, L2_BRIDGEHUB_ADDRESS, L2_ASSET_ROUTER_ADDRESS, L2_NATIVE_TOKEN_VAULT_ADDRESS, L2_MESSAGE_ROOT_ADDRESS } from "../Utils.sol";
+import {Utils, L2_BRIDGEHUB_ADDRESS, L2_ASSET_ROUTER_ADDRESS, L2_NATIVE_TOKEN_VAULT_ADDRESS, L2_MESSAGE_ROOT_ADDRESS} from "../Utils.sol";
 import {L2ContractHelper} from "contracts/common/libraries/L2ContractHelper.sol";
 import {L2ContractsBytecodesLib} from "../L2ContractsBytecodesLib.sol";
 import {IL2ContractDeployer} from "contracts/common/interfaces/IL2ContractDeployer.sol";
 
-
 // solhint-disable no-console, gas-custom-errors
 
 /// @notice Enum representing the programming language of the contract
-enum Language { Solidity, Yul }
+enum Language {
+    Solidity,
+    Yul
+}
 
 /// @notice Struct representing a system contract's details
 struct SystemContract {
-    address addr;        // Contract address
-    string codeName;     // Name of the contract code
-    Language lang;       // Programming language used
+    address addr; // Contract address
+    string codeName; // Name of the contract code
+    Language lang; // Programming language used
 }
 
 /// @dev The number of built-in contracts that reside within the "system-contracts" folder
@@ -201,18 +203,18 @@ library SystemContractsProcessing {
 
         // In O(N^2) we'll mark duplicated hashes as zeroes.
         bytes32[] memory hashes = new bytes32[](input.length);
-        for(uint256 i = 0; i < input.length; i++) {
+        for (uint256 i = 0; i < input.length; i++) {
             hashes[i] = keccak256(input[i]);
         }
 
         uint256 toInclude = 0;
 
-        for(uint256 i = 0; i < hashes.length; i++) {
-            if(hashes[i] != bytes32(0)) {
+        for (uint256 i = 0; i < hashes.length; i++) {
+            if (hashes[i] != bytes32(0)) {
                 toInclude += 1;
             }
 
-            for(uint j = i + 1; j < hashes.length; j++) {
+            for (uint j = i + 1; j < hashes.length; j++) {
                 if (hashes[i] == hashes[j]) {
                     hashes[j] = bytes32(0);
                 }
@@ -221,10 +223,10 @@ library SystemContractsProcessing {
 
         output = new bytes[](toInclude);
         uint256 included = 0;
-        for(uint256 i = 0; i < input.length; i++) {
-            if(hashes[i] != bytes32(0)) {
+        for (uint256 i = 0; i < input.length; i++) {
+            if (hashes[i] != bytes32(0)) {
                 output[included] = input[i];
-                ++included; 
+                ++included;
             }
         }
 
@@ -236,23 +238,24 @@ library SystemContractsProcessing {
         result = new bytes[](SYSTEM_CONTRACTS_COUNT);
 
         SystemContract[] memory systemContracts = getSystemContracts();
-        for(uint256 i = 0; i < SYSTEM_CONTRACTS_COUNT; i++) {
-            if(systemContracts[i].lang == Language.Solidity) {
-                result[i]  = Utils.readSystemContractsBytecode(systemContracts[i].codeName);
+        for (uint256 i = 0; i < SYSTEM_CONTRACTS_COUNT; i++) {
+            if (systemContracts[i].lang == Language.Solidity) {
+                result[i] = Utils.readSystemContractsBytecode(systemContracts[i].codeName);
             } else {
-                result[i]  = Utils.readPrecompileBytecode(systemContracts[i].codeName);
+                result[i] = Utils.readPrecompileBytecode(systemContracts[i].codeName);
             }
         }
     }
 
-    function getSystemContractsForceDeployments() internal returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments){
-        forceDeployments = new IL2ContractDeployer.ForceDeployment[](
-            SYSTEM_CONTRACTS_COUNT
-        );
+    function getSystemContractsForceDeployments()
+        internal
+        returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments)
+    {
+        forceDeployments = new IL2ContractDeployer.ForceDeployment[](SYSTEM_CONTRACTS_COUNT);
 
         SystemContract[] memory systemContracts = getSystemContracts();
         bytes[] memory bytecodes = getSystemContractsBytecodes();
-        for(uint256 i = 0; i < SYSTEM_CONTRACTS_COUNT; i++) {
+        for (uint256 i = 0; i < SYSTEM_CONTRACTS_COUNT; i++) {
             forceDeployments[i] = IL2ContractDeployer.ForceDeployment({
                 bytecodeHash: L2ContractHelper.hashL2Bytecode(bytecodes[i]),
                 newAddress: systemContracts[i].addr,
@@ -275,10 +278,11 @@ library SystemContractsProcessing {
     /// Note, that while proper initialization may reqiure multiple steps,
     /// those will be conducted inside a specialized upgrade. We still provide
     /// these force deployments here for the sake of consistency
-    function getOtherBuiltinForceDeployments() internal returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments) {
-        forceDeployments = new IL2ContractDeployer.ForceDeployment[](
-            OTHER_BUILT_IN_CONTRACTS_COUNT
-        );
+    function getOtherBuiltinForceDeployments()
+        internal
+        returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments)
+    {
+        forceDeployments = new IL2ContractDeployer.ForceDeployment[](OTHER_BUILT_IN_CONTRACTS_COUNT);
         bytes[] memory bytecodes = getOtherContractsBytecodes();
 
         forceDeployments[0] = IL2ContractDeployer.ForceDeployment({
@@ -311,34 +315,42 @@ library SystemContractsProcessing {
         });
     }
 
-    function forceDeploymentsToHashes(IL2ContractDeployer.ForceDeployment[] memory baseForceDeployments) internal returns (bytes32[] memory hashes) {
+    function forceDeploymentsToHashes(
+        IL2ContractDeployer.ForceDeployment[] memory baseForceDeployments
+    ) internal returns (bytes32[] memory hashes) {
         hashes = new bytes32[](baseForceDeployments.length);
-        for(uint256 i = 0; i < baseForceDeployments.length; i++) {
+        for (uint256 i = 0; i < baseForceDeployments.length; i++) {
             hashes[i] = baseForceDeployments[i].bytecodeHash;
         }
     }
 
-    function mergeForceDeployments(IL2ContractDeployer.ForceDeployment[] memory left, IL2ContractDeployer.ForceDeployment[] memory right) internal returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments) {
+    function mergeForceDeployments(
+        IL2ContractDeployer.ForceDeployment[] memory left,
+        IL2ContractDeployer.ForceDeployment[] memory right
+    ) internal returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments) {
         forceDeployments = new IL2ContractDeployer.ForceDeployment[](left.length + right.length);
-        for(uint256 i = 0; i < left.length; i++) {
+        for (uint256 i = 0; i < left.length; i++) {
             forceDeployments[i] = left[i];
         }
-        for(uint256 i = 0; i < right.length; i++) {
+        for (uint256 i = 0; i < right.length; i++) {
             forceDeployments[left.length + i] = right[i];
         }
     }
 
-    function mergeBytesArrays( bytes[] memory left, bytes[] memory right) internal returns (bytes[] memory result) {
+    function mergeBytesArrays(bytes[] memory left, bytes[] memory right) internal returns (bytes[] memory result) {
         result = new bytes[](left.length + right.length);
-        for(uint256 i = 0; i < left.length; i++) {
+        for (uint256 i = 0; i < left.length; i++) {
             result[i] = left[i];
         }
-        for(uint256 i = 0; i < right.length; i++) {
+        for (uint256 i = 0; i < right.length; i++) {
             result[left.length + i] = right[i];
         }
     }
 
-    function getBaseForceDeployments() internal returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments) {
+    function getBaseForceDeployments()
+        internal
+        returns (IL2ContractDeployer.ForceDeployment[] memory forceDeployments)
+    {
         IL2ContractDeployer.ForceDeployment[] memory otherForceDeployments = getSystemContractsForceDeployments();
         IL2ContractDeployer.ForceDeployment[] memory systemForceDeployments = getSystemContractsForceDeployments();
 

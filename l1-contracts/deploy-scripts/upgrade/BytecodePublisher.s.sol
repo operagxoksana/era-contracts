@@ -6,7 +6,7 @@ pragma solidity 0.8.24;
 import {Vm} from "forge-std/Vm.sol";
 import {console2 as console} from "forge-std/Script.sol";
 
-import { BytecodesSupplier } from "contracts/upgrades/BytecodesSupplier.sol";
+import {BytecodesSupplier} from "contracts/upgrades/BytecodesSupplier.sol";
 import {L2ContractHelper} from "contracts/common/libraries/L2ContractHelper.sol";
 
 library BytecodePublisher {
@@ -27,7 +27,6 @@ library BytecodePublisher {
         uint256 batchStartIndex = 0;
 
         for (uint256 i = 0; i < totalBytecodes; i++) {
-            
             bytes32 hash = L2ContractHelper.hashL2Bytecode(bytecodes[i]);
             if (bytecodesSupplier.publishingBlock(hash) != 0) {
                 console.log("The following bytecode has already been published:");
@@ -43,10 +42,10 @@ library BytecodePublisher {
             if (bytecodeSize > MAX_BATCH_SIZE) {
                 console.log("The following bytecode is too large ", i);
                 console.log("Its size ", bytecodeSize);
-                
+
                 revert("Bytecode is not publishable");
             }
-            
+
             // Check if adding this bytecode exceeds the MAX_BATCH_SIZE
             if (currentBatchSize + bytecodeSize > MAX_BATCH_SIZE) {
                 // Publish the current batch
@@ -87,5 +86,4 @@ library BytecodePublisher {
             sliced[i - start] = array[i];
         }
     }
-
 }

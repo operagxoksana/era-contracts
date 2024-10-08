@@ -30,7 +30,6 @@ contract L2GatewayUpgrade {
         bytes memory _fixedForceDeploymentsData,
         bytes memory _additionalForceDeploymentsData
     ) {
-
         // Secondly, we perform the more complex deployment of the gateway contracts.
         L2GenesisUpgradeHelper.performForceDeployedContractsInit(
             _ctmDeployer,

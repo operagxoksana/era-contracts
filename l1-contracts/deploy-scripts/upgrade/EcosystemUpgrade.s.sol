@@ -67,10 +67,9 @@ import {L2_FORCE_DEPLOYER_ADDR, L2_COMPLEX_UPGRADER_ADDR, L2_DEPLOYER_SYSTEM_CON
 import {IComplexUpgrader} from "contracts/state-transition/l2-deps/IComplexUpgrader.sol";
 import {GatewayUpgradeEncodedInput} from "contracts/upgrades/GatewayUpgrade.sol";
 import {TransitionaryOwner} from "contracts/governance/TransitionaryOwner.sol";
-import { SystemContractsProcessing } from "./SystemContractsProcessing.s.sol";
-import { BytecodePublisher } from "./BytecodePublisher.s.sol";
+import {SystemContractsProcessing} from "./SystemContractsProcessing.s.sol";
+import {BytecodePublisher} from "./BytecodePublisher.s.sol";
 import {BytecodesSupplier} from "contracts/upgrades/BytecodesSupplier.sol";
-
 
 struct FixedForceDeploymentsData {
     uint256 l1ChainId;
@@ -280,7 +279,10 @@ contract EcosystemUpgrade is Script {
     }
 
     function run() public {
-        prepareEcosystemContracts("/script-config/gateway-upgrade-ecosystem.toml", "/script-out/gateway-upgrade-ecosystem.toml");
+        prepareEcosystemContracts(
+            "/script-config/gateway-upgrade-ecosystem.toml",
+            "/script-out/gateway-upgrade-ecosystem.toml"
+        );
     }
 
     function provideAcceptOwnershipCalls() public returns (Call[] memory calls) {
@@ -424,13 +426,15 @@ contract EcosystemUpgrade is Script {
             recursionCircuitsSetVksHash: config.contracts.recursionCircuitsSetVksHash
         });
 
-        IL2ContractDeployer.ForceDeployment[] memory baseForceDeployments = SystemContractsProcessing.getBaseForceDeployments();
+        IL2ContractDeployer.ForceDeployment[] memory baseForceDeployments = SystemContractsProcessing
+            .getBaseForceDeployments();
 
         // This upgrade has complex upgrade. We do not know whether its implementation has been deployed.
         // We will do the following trick:
         // - Deploy the upgrade implementation into the address of the complex upgrader. And execute the upgrade inside the constructor.
         // - Deploy back the original bytecode.
-        IL2ContractDeployer.ForceDeployment[] memory additionalForceDeployments = new IL2ContractDeployer.ForceDeployment[](2);
+        IL2ContractDeployer.ForceDeployment[]
+            memory additionalForceDeployments = new IL2ContractDeployer.ForceDeployment[](2);
         additionalForceDeployments[0] = IL2ContractDeployer.ForceDeployment({
             bytecodeHash: L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readGatewayUpgradeBytecode()),
             newAddress: L2_COMPLEX_UPGRADER_ADDR,
@@ -491,11 +495,8 @@ contract EcosystemUpgrade is Script {
         // Stage 1 of the upgrade:
         // - accept all the ownerships of the contracts
         // - set the new upgrade data for chains + update validator timelock.
-        calls = mergeCalls(
-            provideAcceptOwnershipCalls(),
-            provideSetNewVersionUpgradeCall()
-        );
-    } 
+        calls = mergeCalls(provideAcceptOwnershipCalls(), provideSetNewVersionUpgradeCall());
+    }
 
     function getStage2UpgradeCalls() public returns (Call[] memory calls) {
         calls = new Call[](9);
@@ -766,11 +767,10 @@ contract EcosystemUpgrade is Script {
         // - L2GatewayUpgrade
         // - new L2 shared bridge legacy implementation
         // - new bridged erc20 token implementation
-        // 
+        //
         // Also, not strictly necessary, but better for consistency with the new chains:
         // - UpgradeableBeacon
         // - BeaconProxy
-
 
         bytes[] memory upgradeSpecificDependencies = new bytes[](5);
         upgradeSpecificDependencies[0] = L2ContractsBytecodesLib.readGatewayUpgradeBytecode();
@@ -1433,7 +1433,6 @@ contract EcosystemUpgrade is Script {
             result[a.length + i] = b[i];
         }
     }
-
 
     // add this to be excluded from coverage report
     function test() internal {}

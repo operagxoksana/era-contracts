@@ -12,7 +12,7 @@ import {ForceDeployment} from "./IContractDeployer.sol";
 interface IComplexUpgrader {
     function forceDeployAndUpgrade(
         ForceDeployment[] calldata _forceDeployments,
-        address _delegateTo, 
+        address _delegateTo,
         bytes calldata _calldata
     ) external payable;
 
