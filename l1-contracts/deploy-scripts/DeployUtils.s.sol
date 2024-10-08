@@ -269,7 +269,7 @@ contract DeployUtils is Script {
     }
 
     function deployBytecodesSupplier() internal {
-        address contractAddress = deployViaCreate2(type(BytecodesSupplier).creationCode);
+        address contractAddress = deployViaCreate2(type(BytecodesSupplier).creationCode, "");
         console.log("BytecodesSupplier deployed at:", contractAddress);
         addresses.bytecodesSupplier = contractAddress;
     }
