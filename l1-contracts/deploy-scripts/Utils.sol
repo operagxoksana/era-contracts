@@ -987,6 +987,26 @@ library Utils {
         vm.stopBroadcast();
     }
 
+    // FIXME: I dont like that we have to do this
+    function adminExecuteWithManualGas(
+        address _admin,
+        address _accessControlRestriction,
+        address _target,
+        bytes memory _data,
+        uint256 _value,
+        uint256 _gas
+    ) internal {
+        address defaultAdmin = AccessControlRestriction(_accessControlRestriction).defaultAdmin();
+
+        Call[] memory calls = new Call[](1);
+        calls[0] = Call({target: _target, value: _value, data: _data});
+
+        vm.startBroadcast(defaultAdmin);
+        IChainAdmin(_admin).multicall{value: _value, gas: _gas}(calls, true);
+        vm.stopBroadcast();
+
+    }
+
     function readRollupDAValidatorBytecode() internal view returns (bytes memory bytecode) {
         bytecode = readFoundryBytecode("/../da-contracts/out/RollupL1DAValidator.sol/RollupL1DAValidator.json");
     }

@@ -60,6 +60,8 @@ contract ChainUpgrade is Script {
         configPath = string.concat(root, configPath);
         outputPath = string.concat(root, outputPath);
 
+        console.log("Hey");
+
         initializeConfig(configPath, ecosystemInputPath, ecosystemOutputPath);
 
         checkCorrectOwnerAddress();
@@ -155,6 +157,7 @@ contract ChainUpgrade is Script {
     }
 
     function deployNewChainAdmin() internal {
+        vm.broadcast(config.ownerAddress);
         AccessControlRestriction accessControlRestriction = new AccessControlRestriction(0, config.ownerAddress);
 
         address[] memory restrictions;
@@ -167,6 +170,7 @@ contract ChainUpgrade is Script {
             restrictions[0] = address(accessControlRestriction);
         }
 
+        vm.broadcast(config.ownerAddress);
         ChainAdmin newChainAdmin = new ChainAdmin(restrictions);
         output.chainAdmin = address(newChainAdmin);
         output.accessControlRestriction = address(accessControlRestriction);
@@ -188,12 +192,13 @@ contract ChainUpgrade is Script {
         vm.stopBroadcast();
 
         // Now we need to accept the adminship
-        Utils.adminExecute({
+        Utils.adminExecuteWithManualGas({
             _admin: output.chainAdmin,
             _accessControlRestriction: output.accessControlRestriction,
             _target: config.chainDiamondProxyAddress,
             _data: abi.encodeCall(IAdmin.acceptAdmin, ()),
-            _value: 0
+            _value: 0,
+            _gas: 5_000_000
         });
     }
 

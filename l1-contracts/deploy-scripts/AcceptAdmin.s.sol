@@ -133,12 +133,13 @@ contract AcceptAdmin is Script {
         uint256 oldProtocolVersion = IZKChain(chainDiamondProxy).getProtocolVersion();
         Diamond.DiamondCutData memory upgradeCutData = abi.decode(diamondCut, (Diamond.DiamondCutData));
 
-        Utils.adminExecute(
+        Utils.adminExecuteWithManualGas(
             adminAddr,
             accessControlRestriction,
             chainDiamondProxy,
             abi.encodeCall(IAdmin.upgradeChainFromVersion, (oldProtocolVersion, upgradeCutData)),
-            0
+            0,
+            5_000_000
         );
     }
 
