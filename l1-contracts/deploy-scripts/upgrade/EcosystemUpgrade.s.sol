@@ -1367,6 +1367,11 @@ contract EcosystemUpgrade is Script {
             "validium_l1_da_validator_addr",
             addresses.daAddresses.l1ValidiumDAValidator
         );
+        vm.serializeAddress(
+            "deployed_addresses",
+            "l1_bytecodes_supplier_addr",
+            addresses.bytecodesSupplier
+        );
 
         string memory deployedAddresses = vm.serializeAddress(
             "deployed_addresses",
