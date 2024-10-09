@@ -363,7 +363,8 @@ contract EcosystemUpgrade is Script {
     }
 
     function getOldProtocolDeadline() public returns (uint256) {
-        return 7 days;
+        // FIXME: no deadline until we can figure out how to test it locally
+        return type(uint256).max;
     }
 
     function getOldProtocolVersion() public returns (uint256) {
