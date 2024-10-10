@@ -302,4 +302,13 @@ library L2ContractsBytecodesLib {
                 "/../l1-contracts/artifacts-zk/contracts/governance/L2ProxyAdminDeployer.sol/L2ProxyAdminDeployer.json"
             );
     }
+
+    /// @notice Reads the bytecode of the bootloader.
+    /// @return The bytecode of the bootloader.
+    function readBootloaderBytecode() internal view returns (bytes memory) {
+        return
+            Utils.readHardhatBytecode(
+                "/../system-contracts/bootloader/build/artifacts/proved_batch.yul.zbin"
+            );
+    }
 }

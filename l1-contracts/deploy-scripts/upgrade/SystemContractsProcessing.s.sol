@@ -358,9 +358,15 @@ library SystemContractsProcessing {
     }
 
     function getBaseListOfDependencies() internal returns (bytes[] memory factoryDeps) {
+        // Note that it is *important* that these go first in this exact order,
+        // since the server will rely on it.
+        bytes[] memory bootloaderAndDefaultAABytecodes = new bytes[](2);
+        bootloaderAndDefaultAABytecodes[0] = L2ContractsBytecodesLib.readBootloaderBytecode();
+        bootloaderAndDefaultAABytecodes[1] = Utils.readSystemContractsBytecode("DefaultAccount");
+
         bytes[] memory systemBytecodes = getSystemContractsBytecodes();
         bytes[] memory otherBytecodes = getOtherContractsBytecodes();
 
-        factoryDeps = mergeBytesArrays(systemBytecodes, otherBytecodes);
+        factoryDeps = mergeBytesArrays(mergeBytesArrays(bootloaderAndDefaultAABytecodes, systemBytecodes), otherBytecodes);
     }
 }
