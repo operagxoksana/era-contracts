@@ -1004,7 +1004,6 @@ library Utils {
         vm.startBroadcast(defaultAdmin);
         IChainAdmin(_admin).multicall{value: _value, gas: _gas}(calls, true);
         vm.stopBroadcast();
-
     }
 
     function readRollupDAValidatorBytecode() internal view returns (bytes memory bytecode) {

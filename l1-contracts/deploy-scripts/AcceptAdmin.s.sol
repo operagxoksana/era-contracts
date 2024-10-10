@@ -15,7 +15,6 @@ import {IGovernance} from "contracts/governance/IGovernance.sol";
 import {stdToml} from "forge-std/StdToml.sol";
 import {Diamond} from "contracts/state-transition/libraries/Diamond.sol";
 
-
 bytes32 constant SET_TOKEN_MULTIPLIER_SETTER_ROLE = keccak256("SET_TOKEN_MULTIPLIER_SETTER_ROLE");
 
 contract AcceptAdmin is Script {
@@ -102,10 +101,7 @@ contract AcceptAdmin is Script {
         }
     }
 
-    function governanceExecuteCalls(
-        bytes memory callsToExecute,
-        address governanceAddr
-    ) public {
+    function governanceExecuteCalls(bytes memory callsToExecute, address governanceAddr) public {
         IGovernance governance = IGovernance(governanceAddr);
         Ownable2Step ownable = Ownable2Step(governanceAddr);
 
