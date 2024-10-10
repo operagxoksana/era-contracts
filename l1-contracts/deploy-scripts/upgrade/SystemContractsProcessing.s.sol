@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import {Script, console2 as console} from "forge-std/Script.sol";
 import {Utils, L2_BRIDGEHUB_ADDRESS, L2_ASSET_ROUTER_ADDRESS, L2_NATIVE_TOKEN_VAULT_ADDRESS, L2_MESSAGE_ROOT_ADDRESS} from "../Utils.sol";
 import {L2ContractHelper} from "contracts/common/libraries/L2ContractHelper.sol";
 import {L2ContractsBytecodesLib} from "../L2ContractsBytecodesLib.sol";

@@ -208,7 +208,7 @@ library Utils {
                 ".json"
             )
         );
-        bytes memory bytecode = vm.parseJson(file, "$.bytecode");
+        bytes memory bytecode = vm.parseJsonBytes(file, "$.bytecode");
         return bytecode;
     }
 
