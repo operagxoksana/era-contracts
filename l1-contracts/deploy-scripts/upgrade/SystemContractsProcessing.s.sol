@@ -361,7 +361,7 @@ library SystemContractsProcessing {
         // Note that it is *important* that these go first in this exact order,
         // since the server will rely on it.
         bytes[] memory bootloaderAndDefaultAABytecodes = new bytes[](2);
-        bootloaderAndDefaultAABytecodes[0] = L2ContractsBytecodesLib.readBootloaderBytecode();
+        bootloaderAndDefaultAABytecodes[0] = Utils.getBatchBootloaderBytecodeHash();
         bootloaderAndDefaultAABytecodes[1] = Utils.readSystemContractsBytecode("DefaultAccount");
 
         bytes[] memory systemBytecodes = getSystemContractsBytecodes();

@@ -331,6 +331,15 @@ contract EcosystemUpgrade is Script {
     }
 
     function _composeUpgradeTx() internal returns (L2CanonicalTransaction memory transaction) {
+        bytes[] memory deps = getFullListOfFactoryDependencies();
+        uint256[] memory factoryDeps = new uint256[](deps.length);
+
+        require(factoryDeps.length <= 64, "Too many deps");
+
+        for(uint256 i = 0; i < deps.length; i++) {
+            factoryDeps[i] = uint256(L2ContractHelper.hashL2Bytecode(deps[i]));
+        }
+            
         transaction = L2CanonicalTransaction({
             // FIXME: dont use hardcoded values
             txType: 254,
@@ -350,7 +359,7 @@ contract EcosystemUpgrade is Script {
             data: new bytes(0),
             signature: new bytes(0),
             // All factory deps should've been published before
-            factoryDeps: new uint256[](0),
+            factoryDeps: factoryDeps,
             paymasterInput: new bytes(0),
             // Reserved dynamic type for the future use-case. Using it should be avoided,
             // But it is still here, just in case we want to enable some additional functionality
@@ -782,10 +791,11 @@ contract EcosystemUpgrade is Script {
         upgradeSpecificDependencies[4] = L2ContractsBytecodesLib.readBeaconProxyBytecode();
 
         factoryDeps = SystemContractsProcessing.mergeBytesArrays(basicDependencies, upgradeSpecificDependencies);
+        factoryDeps = SystemContractsProcessing.deduplicateBytecodes(factoryDeps);
     }
 
     function publishBytecodes() internal {
-        bytes[] memory allDeps = SystemContractsProcessing.deduplicateBytecodes(getFullListOfFactoryDependencies());
+        bytes[] memory allDeps = getFullListOfFactoryDependencies();
         BytecodePublisher.publishBytecodesInBatches(BytecodesSupplier(addresses.bytecodesSupplier), allDeps);
     }
 
