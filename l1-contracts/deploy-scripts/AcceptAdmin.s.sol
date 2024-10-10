@@ -143,6 +143,23 @@ contract AcceptAdmin is Script {
         );
     }
 
+    function adminScheduleUpgrade(
+        address adminAddr,
+        address accessControlRestriction,
+        uint256 newProtocolVersion,
+        uint256 timestamp
+    ) public {
+        Utils.adminExecuteWithManualGas(
+            adminAddr,
+            accessControlRestriction,
+            adminAddr,
+            // We do instant upgrades, but obviously it should be different in prod
+            abi.encodeCall(ChainAdmin.setUpgradeTimestamp, (newProtocolVersion, timestamp)),
+            0,
+            5_000_000
+        );
+    }
+
     function setDAValidatorPair(
         ChainAdmin chainAdmin,
         address target,
