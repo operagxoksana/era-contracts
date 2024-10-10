@@ -229,6 +229,8 @@ contract EcosystemUpgrade is Script {
     GeneratedData internal generatedData;
     DeployedAddresses internal addresses;
 
+    uint256[] factoryDepsHashes;
+
     function prepareEcosystemContracts(string memory configPath, string memory outputPath) public {
         string memory root = vm.projectRoot();
         configPath = string.concat(root, configPath);
@@ -330,16 +332,7 @@ contract EcosystemUpgrade is Script {
         }
     }
 
-    function _composeUpgradeTx() internal returns (L2CanonicalTransaction memory transaction) {
-        bytes[] memory deps = getFullListOfFactoryDependencies();
-        uint256[] memory factoryDeps = new uint256[](deps.length);
-
-        require(factoryDeps.length <= 64, "Too many deps");
-
-        for(uint256 i = 0; i < deps.length; i++) {
-            factoryDeps[i] = uint256(L2ContractHelper.hashL2Bytecode(deps[i]));
-        }
-            
+    function _composeUpgradeTx() internal returns (L2CanonicalTransaction memory transaction) {            
         transaction = L2CanonicalTransaction({
             // FIXME: dont use hardcoded values
             txType: 254,
@@ -359,7 +352,7 @@ contract EcosystemUpgrade is Script {
             data: new bytes(0),
             signature: new bytes(0),
             // All factory deps should've been published before
-            factoryDeps: factoryDeps,
+            factoryDeps: factoryDepsHashes,
             paymasterInput: new bytes(0),
             // Reserved dynamic type for the future use-case. Using it should be avoided,
             // But it is still here, just in case we want to enable some additional functionality
@@ -797,6 +790,20 @@ contract EcosystemUpgrade is Script {
     function publishBytecodes() internal {
         bytes[] memory allDeps = getFullListOfFactoryDependencies();
         BytecodePublisher.publishBytecodesInBatches(BytecodesSupplier(addresses.bytecodesSupplier), allDeps);
+
+        uint256[] memory factoryDeps = new uint256[](allDeps.length);
+
+        require(factoryDeps.length <= 64, "Too many deps");
+
+        for(uint256 i = 0; i < allDeps.length; i++) {
+            factoryDeps[i] = uint256(L2ContractHelper.hashL2Bytecode(allDeps[i]));
+        }
+
+        // Double check for consistency:
+        require(bytes32(factoryDeps[0]) == config.contracts.bootloaderHash, "bootloader hash factory dep mismatch");
+        require(bytes32(factoryDeps[1]) == config.contracts.defaultAAHash, "default aa hash factory dep mismatch");
+
+        factoryDepsHashes = factoryDeps;
     }
 
     function deployVerifier() internal {
