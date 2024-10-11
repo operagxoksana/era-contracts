@@ -16,7 +16,6 @@ import {stdToml} from "forge-std/StdToml.sol";
 import {Diamond} from "contracts/state-transition/libraries/Diamond.sol";
 import {ValidatorTimelock} from "contracts/state-transition/ValidatorTimelock.sol";
 
-
 bytes32 constant SET_TOKEN_MULTIPLIER_SETTER_ROLE = keccak256("SET_TOKEN_MULTIPLIER_SETTER_ROLE");
 
 contract AcceptAdmin is Script {
@@ -194,13 +193,6 @@ contract AcceptAdmin is Script {
             data = abi.encodeCall(ValidatorTimelock.removeValidator, (chainId, validatorAddress));
         }
 
-        Utils.adminExecuteWithManualGas(
-            adminAddr,
-            accessControlRestriction,
-            validatorTimelock,
-            data,
-            0,
-            5_000_000
-        );
+        Utils.adminExecuteWithManualGas(adminAddr, accessControlRestriction, validatorTimelock, data, 0, 5_000_000);
     }
 }

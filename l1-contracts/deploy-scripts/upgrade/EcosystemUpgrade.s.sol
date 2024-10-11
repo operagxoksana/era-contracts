@@ -444,7 +444,7 @@ contract EcosystemUpgrade is Script {
         // We will do the following trick:
         // - Deploy the upgrade implementation into the address of the complex upgrader. And execute the upgrade inside the constructor.
         // - Deploy back the original bytecode.
-        // 
+        //
         // Also, we need to predeploy the bridges implementation
         IL2ContractDeployer.ForceDeployment[]
             memory additionalForceDeployments = new IL2ContractDeployer.ForceDeployment[](4);
