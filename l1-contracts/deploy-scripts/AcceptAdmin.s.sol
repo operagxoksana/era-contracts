@@ -14,6 +14,8 @@ import {Utils} from "./Utils.sol";
 import {IGovernance} from "contracts/governance/IGovernance.sol";
 import {stdToml} from "forge-std/StdToml.sol";
 import {Diamond} from "contracts/state-transition/libraries/Diamond.sol";
+import {ValidatorTimelock} from "contracts/state-transition/ValidatorTimelock.sol";
+
 
 bytes32 constant SET_TOKEN_MULTIPLIER_SETTER_ROLE = keccak256("SET_TOKEN_MULTIPLIER_SETTER_ROLE");
 
@@ -174,5 +176,31 @@ contract AcceptAdmin is Script {
         vm.startBroadcast();
         chainAdmin.multicall(calls, true);
         vm.stopBroadcast();
+    }
+
+    function updateValidator(
+        address adminAddr,
+        address accessControlRestriction,
+        address validatorTimelock,
+        uint256 chainId,
+        address validatorAddress,
+        bool addValidator
+    ) public {
+        bytes memory data;
+        // The interface should be compatible with both the new and the old ValidatorTimelock
+        if (addValidator) {
+            data = abi.encodeCall(ValidatorTimelock.addValidator, (chainId, validatorAddress));
+        } else {
+            data = abi.encodeCall(ValidatorTimelock.removeValidator, (chainId, validatorAddress));
+        }
+
+        Utils.adminExecuteWithManualGas(
+            adminAddr,
+            accessControlRestriction,
+            validatorTimelock,
+            data,
+            0,
+            5_000_000
+        );
     }
 }
