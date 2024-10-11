@@ -231,6 +231,13 @@ contract EcosystemUpgrade is Script {
 
     uint256[] factoryDepsHashes;
 
+    struct CachedBytecodeHashes {
+        bytes32 sharedL2LegacyBridgeBytecodeHash;
+        bytes32 erc20StandardImplBytecodeHash;
+    }
+
+    CachedBytecodeHashes internal cachedBytecodeHashes;
+
     function prepareEcosystemContracts(string memory configPath, string memory outputPath) public {
         string memory root = vm.projectRoot();
         configPath = string.concat(root, configPath);
@@ -265,8 +272,9 @@ contract EcosystemUpgrade is Script {
 
         deployCTMDeploymentTracker();
 
-        initializeGeneratedData();
         initializeExpectedL2Addresses();
+        // Important, this must come after the initializeExpectedL2Addresses
+        initializeGeneratedData();
 
         deployChainTypeManagerContract();
         setChainTypeManagerInValidatorTimelock();
@@ -441,14 +449,14 @@ contract EcosystemUpgrade is Script {
         IL2ContractDeployer.ForceDeployment[]
             memory additionalForceDeployments = new IL2ContractDeployer.ForceDeployment[](4);
         additionalForceDeployments[0] = IL2ContractDeployer.ForceDeployment({
-            bytecodeHash: L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readL2LegacySharedBridgeBytecode()),
+            bytecodeHash: cachedBytecodeHashes.sharedL2LegacyBridgeBytecodeHash,
             newAddress: addresses.expectedL2Addresses.l2SharedBridgeLegacyImpl,
             callConstructor: true,
             value: 0,
             input: ""
         });
         additionalForceDeployments[1] = IL2ContractDeployer.ForceDeployment({
-            bytecodeHash: L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readStandardERC20Bytecode()),
+            bytecodeHash: cachedBytecodeHashes.erc20StandardImplBytecodeHash,
             newAddress: addresses.expectedL2Addresses.l2BridgedStandardERC20Impl,
             callConstructor: true,
             value: 0,
@@ -730,12 +738,12 @@ contract EcosystemUpgrade is Script {
             ),
             l2SharedBridgeLegacyImpl: Utils.getL2AddressViaCreate2Factory(
                 bytes32(0),
-                L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readL2LegacySharedBridgeBytecode()),
+                cachedBytecodeHashes.sharedL2LegacyBridgeBytecodeHash,
                 hex""
             ),
             l2BridgedStandardERC20Impl: Utils.getL2AddressViaCreate2Factory(
                 bytes32(0),
-                L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readStandardERC20Bytecode()),
+                cachedBytecodeHashes.erc20StandardImplBytecodeHash,
                 hex""
             ),
             expectedL2ProxyAdminDeployer: expectedL2ProxyAdminDeployer,
@@ -798,6 +806,11 @@ contract EcosystemUpgrade is Script {
 
         upgradeSpecificDependencies[3] = L2ContractsBytecodesLib.readUpgradeableBeaconBytecode();
         upgradeSpecificDependencies[4] = L2ContractsBytecodesLib.readBeaconProxyBytecode();
+
+        cachedBytecodeHashes = CachedBytecodeHashes({
+            sharedL2LegacyBridgeBytecodeHash: L2ContractHelper.hashL2Bytecode(upgradeSpecificDependencies[1]),
+            erc20StandardImplBytecodeHash: L2ContractHelper.hashL2Bytecode(upgradeSpecificDependencies[2])
+        });
 
         factoryDeps = SystemContractsProcessing.mergeBytesArrays(basicDependencies, upgradeSpecificDependencies);
         factoryDeps = SystemContractsProcessing.deduplicateBytecodes(factoryDeps);
