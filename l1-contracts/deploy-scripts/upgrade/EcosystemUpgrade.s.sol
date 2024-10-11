@@ -332,7 +332,7 @@ contract EcosystemUpgrade is Script {
         }
     }
 
-    function _composeUpgradeTx() internal returns (L2CanonicalTransaction memory transaction) {            
+    function _composeUpgradeTx() internal returns (L2CanonicalTransaction memory transaction) {
         transaction = L2CanonicalTransaction({
             // FIXME: dont use hardcoded values
             txType: 254,
@@ -795,7 +795,7 @@ contract EcosystemUpgrade is Script {
 
         require(factoryDeps.length <= 64, "Too many deps");
 
-        for(uint256 i = 0; i < allDeps.length; i++) {
+        for (uint256 i = 0; i < allDeps.length; i++) {
             factoryDeps[i] = uint256(L2ContractHelper.hashL2Bytecode(allDeps[i]));
         }
 

@@ -368,6 +368,9 @@ library SystemContractsProcessing {
         bytes[] memory systemBytecodes = getSystemContractsBytecodes();
         bytes[] memory otherBytecodes = getOtherContractsBytecodes();
 
-        factoryDeps = mergeBytesArrays(mergeBytesArrays(bootloaderAndDefaultAABytecodes, systemBytecodes), otherBytecodes);
+        factoryDeps = mergeBytesArrays(
+            mergeBytesArrays(bootloaderAndDefaultAABytecodes, systemBytecodes),
+            otherBytecodes
+        );
     }
 }
