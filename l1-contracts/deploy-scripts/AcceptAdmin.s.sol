@@ -173,7 +173,7 @@ contract AcceptAdmin is Script {
         });
 
         vm.startBroadcast();
-        chainAdmin.multicall(calls, true);
+        chainAdmin.multicall{gas: 5_000_000}(calls, true);
         vm.stopBroadcast();
     }
 
