@@ -24,6 +24,7 @@ struct GatewayUpgradeEncodedInput {
     uint256 l2GatewayUpgradePosition;
     bytes fixedForceDeploymentsData;
     address ctmDeployer;
+    // FIXME: remove this field
     address l2GatewayUpgrade;
     address oldValidatorTimelock;
     address newValidatorTimelock;

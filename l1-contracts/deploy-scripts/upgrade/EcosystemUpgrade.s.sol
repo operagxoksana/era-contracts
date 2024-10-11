@@ -436,9 +436,25 @@ contract EcosystemUpgrade is Script {
         // We will do the following trick:
         // - Deploy the upgrade implementation into the address of the complex upgrader. And execute the upgrade inside the constructor.
         // - Deploy back the original bytecode.
+        // 
+        // Also, we need to predeploy the bridges implementation
         IL2ContractDeployer.ForceDeployment[]
-            memory additionalForceDeployments = new IL2ContractDeployer.ForceDeployment[](2);
+            memory additionalForceDeployments = new IL2ContractDeployer.ForceDeployment[](4);
         additionalForceDeployments[0] = IL2ContractDeployer.ForceDeployment({
+            bytecodeHash: L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readL2LegacySharedBridgeBytecode()),
+            newAddress: addresses.expectedL2Addresses.l2SharedBridgeLegacyImpl,
+            callConstructor: true,
+            value: 0,
+            input: ""
+        });
+        additionalForceDeployments[1] = IL2ContractDeployer.ForceDeployment({
+            bytecodeHash: L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readStandardERC20Bytecode()),
+            newAddress: addresses.expectedL2Addresses.l2BridgedStandardERC20Impl,
+            callConstructor: true,
+            value: 0,
+            input: ""
+        });
+        additionalForceDeployments[2] = IL2ContractDeployer.ForceDeployment({
             bytecodeHash: L2ContractHelper.hashL2Bytecode(L2ContractsBytecodesLib.readGatewayUpgradeBytecode()),
             newAddress: L2_COMPLEX_UPGRADER_ADDR,
             callConstructor: true,
@@ -446,7 +462,7 @@ contract EcosystemUpgrade is Script {
             input: ""
         });
         // Getting the contract back to normal
-        additionalForceDeployments[1] = IL2ContractDeployer.ForceDeployment({
+        additionalForceDeployments[3] = IL2ContractDeployer.ForceDeployment({
             bytecodeHash: L2ContractHelper.hashL2Bytecode(Utils.readSystemContractsBytecode("ComplexUpgrader")),
             newAddress: L2_COMPLEX_UPGRADER_ADDR,
             callConstructor: false,
