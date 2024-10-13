@@ -429,9 +429,14 @@ contract ExecutorFacet is ZKChainBase, IExecutor {
         // Save root hash of L2 -> L1 logs tree
         s.l2LogsRootHashes[_storedBatch.batchNumber] = _storedBatch.l2LogsTreeRoot;
 
-        // Once the batch is executed, we include its message to the message root.
-        IMessageRoot messageRootContract = IBridgehub(s.bridgehub).messageRoot();
-        messageRootContract.addChainBatchRoot(s.chainId, currentBatchNumber, _storedBatch.l2LogsTreeRoot);
+        // FIXME: discuss with the team whether it is okay.
+        // It is needed to ease the migration, but will make the logic a bit incosistent between different settlement
+        // layers.
+        if (block.chainid != L1_CHAIN_ID) {
+            // Once the batch is executed, we include its message to the message root.
+            IMessageRoot messageRootContract = IBridgehub(s.bridgehub).messageRoot();
+            messageRootContract.addChainBatchRoot(s.chainId, currentBatchNumber, _storedBatch.l2LogsTreeRoot);
+        }
     }
 
     /// @inheritdoc IExecutor
