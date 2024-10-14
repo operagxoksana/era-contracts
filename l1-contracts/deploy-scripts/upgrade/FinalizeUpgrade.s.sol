@@ -39,7 +39,7 @@ contract FinalizeUpgrade is Script {
         for(uint256 i = 0; i < chains.length; ++i) {
             Bridgehub bh = Bridgehub(bridgehub);
 
-            if(bh.baseTokenAssetId(chains[i]) != bytes32(0)){
+            if(bh.baseTokenAssetId(chains[i]) == bytes32(0)){
                 vm.broadcast();
                 Bridgehub(bridgehub).setLegacyBaseTokenAssetId(chains[i]);
             }

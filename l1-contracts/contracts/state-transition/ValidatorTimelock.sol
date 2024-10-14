@@ -187,6 +187,9 @@ contract ValidatorTimelock is IExecutor, Ownable2Step {
         // the legacy method here for obtaining the chain id in order for
         // this contract to before the CTM upgrade is finalized.
         address contractAddress = chainTypeManager.getHyperchain(_chainId);
+        if (contractAddress == address(0)) {
+            revert ZeroAddress();
+        }
         assembly {
             // Copy function signature and arguments from calldata at zero position into memory at pointer position
             calldatacopy(0, 0, calldatasize())
